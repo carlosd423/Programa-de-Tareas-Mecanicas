@@ -62,10 +62,18 @@
         /* Formularios y Listas */
         .fila-form { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 5px; flex-wrap: wrap; }
         .lista-items { border: 1px solid #ddd; border-radius: 5px; max-height: 350px; overflow-y: auto; }
-        .item-lista { display: flex; flex-direction: column; padding: 10px; border-bottom: 1px solid #eee; }
+        .item-lista { display: flex; flex-direction: column; padding: 10px; border-bottom: 1px solid #eee; transition: all 0.3s ease; }
         .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .opciones-tareas label { font-size: 14px; margin-right: 12px; cursor: pointer; display: inline-block; margin-bottom: 5px; }
+        
+        /* Etiquetas y botones sutiles para Ausentes */
         .etiqueta-anciano { color: #856404; background-color: #fff3cd; padding: 2px 5px; border-radius: 3px; font-size: 12px; margin-left: 5px; }
+        
+        .btn-sutil { background-color: #e2e3e5; color: #383d41; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; margin-right: 10px; }
+        .btn-sutil:hover { background-color: #d6d8db; }
+        
+        /* Clase CSS para difuminar visualmente a la persona ausente */
+        .tarjeta-ausente { opacity: 0.5; background-color: #f8f9fa; filter: grayscale(80%); border-left: 4px solid #6c757d; }
         
         .btn-asamblea { background-color: #17a2b8; }
         .btn-asamblea:hover { background-color: #138496; }
@@ -81,6 +89,7 @@
             <input type="month" id="selector-mes" onchange="iniciarPrograma()">
             <button class="btn-icono btn-magia" onclick="autocompletarMes()" title="Llenar vacíos equilibradamente">🪄 Autocompletar Inteligente</button>
             <button class="btn-icono" onclick="abrirModal()" title="Configuraciones">⚙️ Ajustes</button>
+            <!-- El botón de favoritos ha sido eliminado -->
         </div>
         <button onclick="exportarJPG()">🖨️ Descargar como JPG</button>
     </div>
@@ -136,7 +145,7 @@
                 <div class="lista-items" id="lista-eventos"></div>
             </div>
 
-            <!-- Nueva Pestaña de Respaldo -->
+            <!-- Pestaña de Respaldo -->
             <div id="tab-respaldo" class="tab-content">
                 <div style="background: #f9f9f9; padding: 20px; border-radius: 5px; margin-bottom: 15px;">
                     <h3 style="margin-top: 0;">⬇️ Exportar Datos</h3>
@@ -151,35 +160,32 @@
                     <button onclick="importarRespaldo()" style="background-color: #ffc107; color: #000;">Cargar Archivo de Respaldo</button>
                 </div>
             </div>
-
         </div>
     </div>
 
     <script>
         // --- 1. GESTIÓN DE DATOS ---
         const publicadoresBase = [
-            { id: 1, nombre: "Miguel Lira", anciano: false, acomodador: true, microfono: true, plataforma: true, lector: true, presidente: false },
-            { id: 2, nombre: "Raul Trejo", anciano: true, acomodador: true, microfono: false, plataforma: false, lector: false, presidente: true }, 
-            { id: 3, nombre: "Carlos Drusetta", anciano: false, acomodador: true, microfono: false, plataforma: false, lector: false, presidente: true },
-            { id: 4, nombre: "Roxana de Castillo", anciano: false, acomodador: false, microfono: true, plataforma: false, lector: true, presidente: false },
-            { id: 5, nombre: "--- (No aplica) ---", anciano: false, acomodador: false, microfono: false, plataforma: false, lector: true, presidente: false }
+            { id: 1, nombre: "Miguel Lira", anciano: false, ausente: false, acomodador: true, microfono: true, plataforma: true, lector: true, presidente: false },
+            { id: 2, nombre: "Raul Trejo", anciano: true, ausente: false, acomodador: true, microfono: false, plataforma: false, lector: false, presidente: true }, 
+            { id: 3, nombre: "Carlos Drusetta", anciano: false, ausente: false, acomodador: true, microfono: false, plataforma: false, lector: false, presidente: true },
+            { id: 4, nombre: "Roxana de Castillo", anciano: false, ausente: false, acomodador: false, microfono: true, plataforma: false, lector: true, presidente: false },
+            { id: 5, nombre: "--- (No aplica) ---", anciano: false, ausente: false, acomodador: false, microfono: false, plataforma: false, lector: true, presidente: false }
         ];
 
         let publicadores = JSON.parse(localStorage.getItem('publicadores')) || publicadoresBase;
         let eventos = JSON.parse(localStorage.getItem('eventos')) || [];
         let mesActualGenerado = null; 
 
-        // Función para limpiar eventos que ya pasaron
         function limpiarEventosVencidos() {
             const hoy = new Date();
-            hoy.setHours(0,0,0,0); // Reiniciar horas a la medianoche para una comparación justa
+            hoy.setHours(0,0,0,0); 
 
             const eventosFiltrados = eventos.filter(ev => {
                 const fechaEv = new Date(ev.fecha + "T00:00:00");
-                return fechaEv >= hoy; // Solo conserva los eventos de hoy en adelante
+                return fechaEv >= hoy; 
             });
 
-            // Si encontró eventos viejos y los borró, guardamos el cambio
             if(eventos.length !== eventosFiltrados.length) {
                 eventos = eventosFiltrados;
                 guardarEventos();
@@ -210,7 +216,7 @@
         function añadirPublicador() {
             const input = document.getElementById('nuevo-nombre');
             if(input.value.trim() === '') return;
-            publicadores.push({ id: Date.now(), nombre: input.value.trim(), anciano: false, acomodador: false, microfono: false, plataforma: false, lector: false, presidente: false });
+            publicadores.push({ id: Date.now(), nombre: input.value.trim(), anciano: false, ausente: false, acomodador: false, microfono: false, plataforma: false, lector: false, presidente: false });
             input.value = ''; 
             ordenarPublicadores(); 
             guardarPublicadores(); 
@@ -218,6 +224,7 @@
             recargarDesplegablesExistentes();
         }
         function borrarPublicador(id) { publicadores = publicadores.filter(p => p.id !== id); guardarPublicadores(); renderizarPublicadores(); recargarDesplegablesExistentes(); }
+        
         function toggleTarea(id, tarea) {
             const pub = publicadores.find(p => p.id === id);
             if(pub) { pub[tarea] = !pub[tarea]; guardarPublicadores(); }
@@ -228,14 +235,22 @@
             lista.innerHTML = '';
             publicadores.forEach(pub => {
                 let etiquetaA = pub.anciano ? `<span class="etiqueta-anciano">Anciano</span>` : "";
+                
+                // Determinamos visualmente si está ausente
+                let claseAusente = pub.ausente ? 'tarjeta-ausente' : '';
+                let textoBotonAusente = pub.ausente ? '▶️ Reintegrar' : '⏸️ Marcar ausente';
+                
                 lista.innerHTML += `
-                    <div class="item-lista">
+                    <div class="item-lista ${claseAusente}">
                         <div class="item-header">
                             <strong style="font-size: 16px;">${pub.nombre} ${etiquetaA}</strong>
-                            <button class="btn-cerrar" onclick="borrarPublicador(${pub.id})">❌</button>
+                            <div>
+                                <button class="btn-sutil" onclick="toggleTarea(${pub.id}, 'ausente'); renderizarPublicadores(); recargarDesplegablesExistentes();" title="Suspender temporalmente">${textoBotonAusente}</button>
+                                <button class="btn-cerrar" onclick="borrarPublicador(${pub.id})" title="Eliminar hermano">❌</button>
+                            </div>
                         </div>
                         <div class="opciones-tareas">
-                            <label style="color: #856404; font-weight:bold; border-right: 2px solid #ccc; padding-right: 10px;">
+                            <label style="color: #856404; font-weight:bold; border-right: 1px solid #ccc; padding-right: 10px;">
                                 <input type="checkbox" onchange="toggleTarea(${pub.id}, 'anciano'); renderizarPublicadores();" ${pub.anciano ? 'checked' : ''}> Es Anciano
                             </label>
                             <label><input type="checkbox" onchange="toggleTarea(${pub.id}, 'acomodador')" ${pub.acomodador ? 'checked' : ''}> Acomodador</label>
@@ -269,12 +284,9 @@
 
         // --- SISTEMA DE RESPALDO Y RESTAURACIÓN ---
         function exportarRespaldo() {
-            // Empacamos los datos
             const datosParaRespaldar = { publicadores: publicadores, eventos: eventos };
-            // Los convertimos a formato JSON seguro para web
             const cadenaDatos = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(datosParaRespaldar));
             
-            // Creamos un enlace invisible y lo clickeamos automáticamente
             const enlaceDescarga = document.createElement('a');
             enlaceDescarga.setAttribute("href", cadenaDatos);
             enlaceDescarga.setAttribute("download", "respaldo_programa.json");
@@ -295,7 +307,6 @@
 
             lector.onload = function(eventoLectura) {
                 try {
-                    // Traducimos el archivo de vuelta a código
                     const datosRestaurados = JSON.parse(eventoLectura.target.result);
                     
                     if (datosRestaurados.publicadores && datosRestaurados.eventos) {
@@ -307,7 +318,7 @@
                         ordenarPublicadores();
                         renderizarPublicadores();
                         renderizarEventos();
-                        iniciarPrograma(); // Refrescar la pantalla
+                        iniciarPrograma(); 
                         
                         alert("¡Respaldo cargado con éxito! Tus datos han sido restaurados.");
                         cerrarModal();
@@ -318,7 +329,6 @@
                     alert("Ocurrió un error al leer el archivo. Asegúrate de que sea el correcto.");
                 }
             };
-            // Iniciar la lectura del archivo
             lector.readAsText(archivo);
         }
 
@@ -356,7 +366,10 @@
             const selects = document.querySelectorAll('#area-impresion select');
             let conteoPorPersona = {};
             
-            publicadores.forEach(p => { if(!p.nombre.includes("---")) conteoPorPersona[p.nombre] = 0; });
+            // Ignoramos a los hermanos ausentes para que no salgan en el balance
+            publicadores.forEach(p => { 
+                if(!p.nombre.includes("---") && !p.ausente) conteoPorPersona[p.nombre] = 0; 
+            });
 
             selects.forEach(select => {
                 const nombre = select.value;
@@ -451,7 +464,6 @@
 
         // --- 5. LÓGICA DE GENERACIÓN ---
         window.onload = function() {
-            // Ejecutamos el mantenimiento apenas carga la página
             limpiarEventosVencidos();
 
             const hoy = new Date();
@@ -501,7 +513,10 @@
             actualizarContador();
         }
 
-        function obtenerNombresPorTarea(tarea) { return publicadores.filter(p => p[tarea]).map(p => p.nombre); }
+        function obtenerNombresPorTarea(tarea) { 
+            // Filtramos a los que tienen la tarea asignada Y que NO están ausentes
+            return publicadores.filter(p => p[tarea] && !p.ausente).map(p => p.nombre); 
+        }
 
         function crearDesplegable(tarea, desactivado = false) {
             let opciones = `<option value="">-- Elegir --</option>`;
