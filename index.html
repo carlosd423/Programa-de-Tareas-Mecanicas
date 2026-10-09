@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Programa de Asignaciones Mecánicas</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* Estilos generales */
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px; margin: 0; }
+        .barra-superior { background-color: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .controles-izq { display: flex; gap: 10px; align-items: center; }
+        select, input, button { padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; }
+        button { background-color: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #218838; }
+        .btn-icono { background-color: #6c757d; font-size: 18px; padding: 5px 10px; }
+        .btn-icono:hover { background-color: #5a6268; }
+        .btn-magia { background-color: #6f42c1; }
+        .btn-magia:hover { background-color: #59339d; }
+        
+        .contenedor-botones-mes { text-align: center; margin-bottom: 40px; display: flex; justify-content: center; gap: 10px; }
+        .btn-eliminar-mes { background-color: #dc3545; }
+        .btn-eliminar-mes:hover { background-color: #c82333; }
+
+        /* Estilos de la Tabla y Encabezado */
+        #area-impresion { background-color: #f4f4f9; padding: 10px; }
+        .encabezado-impresion { text-align: center; margin-bottom: 30px; margin-top: 10px; color: #000; }
+        .encabezado-impresion h1 { margin: 0; font-size: 32px; font-weight: bold; }
+        .encabezado-impresion h2 { margin: 5px 0 0 0; font-size: 18px; font-weight: normal; }
+        
+        .mes-container { background-color: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); page-break-inside: avoid; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #999; padding: 8px; text-align: center; vertical-align: middle; }
+        
+        th { background-color: #82e0aa; color: #000; font-size: 18px; font-weight: bold; padding: 12px; }
+        tr:nth-child(even) { background-color: #eafaf1; }
+        .asamblea-row td { font-weight: bold; font-size: 1.2em; letter-spacing: 2px; background-color: #fff; padding: 15px; }
+        
+        .celda-fecha strong { font-size: 20px; }
+        .celda-selectores select { width: 95%; margin: 4px auto; display: block; font-size: 14px; }
+
+        /* Panel de Estadísticas */
+        #panel-estadisticas { background-color: #e2e3e5; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; }
+        #panel-estadisticas h3 { margin-top: 0; margin-bottom: 10px; font-size: 16px; color: #383d41; }
+        .grid-estadisticas { display: flex; flex-wrap: wrap; gap: 10px; }
+        .badge-estadistica { background-color: #fff; padding: 5px 10px; border-radius: 20px; font-size: 14px; font-weight: bold; border: 1px solid #ccc; display: flex; justify-content: space-between; min-width: 150px; }
+        .badge-numero { background-color: #28a745; color: white; border-radius: 50%; padding: 2px 8px; margin-left: 10px; }
+
+        /* Modal y Pestañas */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: #fff; padding: 20px; border-radius: 8px; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 15px; }
+        .btn-cerrar { background: #dc3545; }
+        .btn-cerrar:hover { background: #c82333; }
+        
+        .tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+        .tab-btn { background: #eee; color: #333; padding: 10px 15px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; }
+        .tab-btn.activo { background: #28a745; color: white; }
+        .tab-content { display: none; }
+        .tab-content.activo { display: block; }
+        
+        /* Formularios y Listas */
+        .fila-form { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 5px; flex-wrap: wrap; }
+        .lista-items { border: 1px solid #ddd; border-radius: 5px; max-height: 350px; overflow-y: auto; }
+        .item-lista { display: flex; flex-direction: column; padding: 10px; border-bottom: 1px solid #eee; }
+        .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .opciones-tareas label { font-size: 14px; margin-right: 12px; cursor: pointer; display: inline-block; margin-bottom: 5px; }
+        .etiqueta-anciano { color: #856404; background-color: #fff3cd; padding: 2px 5px; border-radius: 3px; font-size: 12px; margin-left: 5px; }
+        
+        .btn-asamblea { background-color: #17a2b8; }
+        .btn-asamblea:hover { background-color: #138496; }
+        .btn-visita { background-color: #fd7e14; }
+        .btn-visita:hover { background-color: #e86e1c; }
+    </style>
+</head>
+<body>
+
+    <div class="barra-superior">
+        <div class="controles-izq">
+            <strong>Mes inicial:</strong>
+            <input type="month" id="selector-mes" onchange="iniciarPrograma()">
+            <button class="btn-icono btn-magia" onclick="autocompletarMes()" title="Llenar vacíos equilibradamente">🪄 Autocompletar Inteligente</button>
+            <button class="btn-icono" onclick="abrirModal()" title="Configuraciones">⚙️ Ajustes</button>
+        </div>
+        <button onclick="exportarJPG()">🖨️ Descargar como JPG</button>
+    </div>
+
+    <!-- Panel de Balance de Asignaciones (No se imprime) -->
+    <div id="panel-estadisticas">
+        <h3>📊 Balance de Asignaciones</h3>
+        <div class="grid-estadisticas" id="grid-estadisticas"></div>
+    </div>
+
+    <!-- Contenedor que será convertido a imagen -->
+    <div id="area-impresion">
+        <div class="encabezado-impresion" id="encabezado-principal">
+            <h1>Programa de Asignaciones Mecanicas</h1>
+            <h2>Congregacion Ojo de Agua</h2>
+        </div>
+        <!-- Los meses se inyectan aquí -->
+    </div>
+    
+    <div class="contenedor-botones-mes">
+        <button onclick="añadirSiguienteMes()" style="padding: 10px 20px; font-size: 16px;">➕ Añadir siguiente mes</button>
+        <button id="btn-eliminar-mes" class="btn-eliminar-mes" onclick="eliminarUltimoMes()" style="padding: 10px 20px; font-size: 16px; display: none;">➖ Eliminar último mes</button>
+    </div>
+
+    <!-- Panel de Opciones (Modal) -->
+    <div id="modal-ajustes" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ Panel de Ajustes</h2>
+                <button class="btn-cerrar" onclick="cerrarModal()">Cerrar</button>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab-btn activo" onclick="cambiarPestaña('tab-publicadores', this)">👤 Publicadores</button>
+                <button class="tab-btn" onclick="cambiarPestaña('tab-eventos', this)">📅 Eventos</button>
+                <button class="tab-btn" onclick="cambiarPestaña('tab-respaldo', this)">💾 Respaldo</button>
+            </div>
+            
+            <div id="tab-publicadores" class="tab-content activo">
+                <div class="fila-form">
+                    <input type="text" id="nuevo-nombre" placeholder="Nombre del hermano" style="flex:1;">
+                    <button onclick="añadirPublicador()">Añadir Hermano</button>
+                </div>
+                <div class="lista-items" id="lista-publicadores"></div>
+            </div>
+            
+            <div id="tab-eventos" class="tab-content">
+                <div class="fila-form">
+                    <input type="date" id="fecha-evento">
+                    <button class="btn-asamblea" onclick="añadirEvento('asamblea')">🏕️ Añadir próxima asamblea</button>
+                    <button class="btn-visita" onclick="añadirEvento('visita')">👔 Añadir fecha de la visita</button>
+                </div>
+                <div class="lista-items" id="lista-eventos"></div>
+            </div>
+
+            <!-- Nueva Pestaña de Respaldo -->
+            <div id="tab-respaldo" class="tab-content">
+                <div style="background: #f9f9f9; padding: 20px; border-radius: 5px; margin-bottom: 15px;">
+                    <h3 style="margin-top: 0;">⬇️ Exportar Datos</h3>
+                    <p style="font-size: 14px; color: #555;">Descarga una copia de seguridad de todos tus publicadores, configuraciones de tareas y eventos programados.</p>
+                    <button onclick="exportarRespaldo()" style="background-color: #17a2b8;">Descargar Archivo de Respaldo</button>
+                </div>
+                
+                <div style="background: #fff3cd; padding: 20px; border-radius: 5px; border: 1px solid #ffeeba;">
+                    <h3 style="margin-top: 0; color: #856404;">⬆️ Importar Datos</h3>
+                    <p style="font-size: 14px; color: #856404;">Restaura una copia de seguridad anterior. <strong>Advertencia:</strong> Esto reemplazará todos los datos que tienes actualmente.</p>
+                    <input type="file" id="archivo-respaldo" accept=".json" style="margin-bottom: 10px; display: block;">
+                    <button onclick="importarRespaldo()" style="background-color: #ffc107; color: #000;">Cargar Archivo de Respaldo</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- 1. GESTIÓN DE DATOS ---
+        const publicadoresBase = [
+            { id: 1, nombre: "Miguel Lira", anciano: false, acomodador: true, microfono: true, plataforma: true, lector: true, presidente: false },
+            { id: 2, nombre: "Raul Trejo", anciano: true, acomodador: true, microfono: false, plataforma: false, lector: false, presidente: true }, 
+            { id: 3, nombre: "Carlos Drusetta", anciano: false, acomodador: true, microfono: false, plataforma: false, lector: false, presidente: true },
+            { id: 4, nombre: "Roxana de Castillo", anciano: false, acomodador: false, microfono: true, plataforma: false, lector: true, presidente: false },
+            { id: 5, nombre: "--- (No aplica) ---", anciano: false, acomodador: false, microfono: false, plataforma: false, lector: true, presidente: false }
+        ];
+
+        let publicadores = JSON.parse(localStorage.getItem('publicadores')) || publicadoresBase;
+        let eventos = JSON.parse(localStorage.getItem('eventos')) || [];
+        let mesActualGenerado = null; 
+
+        // Función para limpiar eventos que ya pasaron
+        function limpiarEventosVencidos() {
+            const hoy = new Date();
+            hoy.setHours(0,0,0,0); // Reiniciar horas a la medianoche para una comparación justa
+
+            const eventosFiltrados = eventos.filter(ev => {
+                const fechaEv = new Date(ev.fecha + "T00:00:00");
+                return fechaEv >= hoy; // Solo conserva los eventos de hoy en adelante
+            });
+
+            // Si encontró eventos viejos y los borró, guardamos el cambio
+            if(eventos.length !== eventosFiltrados.length) {
+                eventos = eventosFiltrados;
+                guardarEventos();
+            }
+        }
+
+        function ordenarPublicadores() {
+            publicadores.sort((a, b) => {
+                if(a.nombre.includes("---")) return 1; 
+                if(b.nombre.includes("---")) return -1;
+                return a.nombre.localeCompare(b.nombre);
+            });
+        }
+        ordenarPublicadores();
+
+        // --- 2. FUNCIONES DEL PANEL DE AJUSTES ---
+        function abrirModal() { document.getElementById('modal-ajustes').style.display = 'flex'; renderizarPublicadores(); renderizarEventos(); }
+        function cerrarModal() { document.getElementById('modal-ajustes').style.display = 'none'; }
+        function cambiarPestaña(idTab, btn) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('activo'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('activo'));
+            document.getElementById(idTab).classList.add('activo');
+            btn.classList.add('activo');
+        }
+
+        // Gestión de Publicadores
+        function guardarPublicadores() { localStorage.setItem('publicadores', JSON.stringify(publicadores)); }
+        function añadirPublicador() {
+            const input = document.getElementById('nuevo-nombre');
+            if(input.value.trim() === '') return;
+            publicadores.push({ id: Date.now(), nombre: input.value.trim(), anciano: false, acomodador: false, microfono: false, plataforma: false, lector: false, presidente: false });
+            input.value = ''; 
+            ordenarPublicadores(); 
+            guardarPublicadores(); 
+            renderizarPublicadores();
+            recargarDesplegablesExistentes();
+        }
+        function borrarPublicador(id) { publicadores = publicadores.filter(p => p.id !== id); guardarPublicadores(); renderizarPublicadores(); recargarDesplegablesExistentes(); }
+        function toggleTarea(id, tarea) {
+            const pub = publicadores.find(p => p.id === id);
+            if(pub) { pub[tarea] = !pub[tarea]; guardarPublicadores(); }
+        }
+
+        function renderizarPublicadores() {
+            const lista = document.getElementById('lista-publicadores');
+            lista.innerHTML = '';
+            publicadores.forEach(pub => {
+                let etiquetaA = pub.anciano ? `<span class="etiqueta-anciano">Anciano</span>` : "";
+                lista.innerHTML += `
+                    <div class="item-lista">
+                        <div class="item-header">
+                            <strong style="font-size: 16px;">${pub.nombre} ${etiquetaA}</strong>
+                            <button class="btn-cerrar" onclick="borrarPublicador(${pub.id})">❌</button>
+                        </div>
+                        <div class="opciones-tareas">
+                            <label style="color: #856404; font-weight:bold; border-right: 2px solid #ccc; padding-right: 10px;">
+                                <input type="checkbox" onchange="toggleTarea(${pub.id}, 'anciano'); renderizarPublicadores();" ${pub.anciano ? 'checked' : ''}> Es Anciano
+                            </label>
+                            <label><input type="checkbox" onchange="toggleTarea(${pub.id}, 'acomodador')" ${pub.acomodador ? 'checked' : ''}> Acomodador</label>
+                            <label><input type="checkbox" onchange="toggleTarea(${pub.id}, 'microfono')" ${pub.microfono ? 'checked' : ''}> Micrófono</label>
+                            <label><input type="checkbox" onchange="toggleTarea(${pub.id}, 'plataforma')" ${pub.plataforma ? 'checked' : ''}> Plataforma</label>
+                            <label><input type="checkbox" onchange="toggleTarea(${pub.id}, 'lector')" ${pub.lector ? 'checked' : ''}> Lector</label>
+                            <label><input type="checkbox" onchange="toggleTarea(${pub.id}, 'presidente')" ${pub.presidente ? 'checked' : ''}> Presidente</label>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        // Gestión de Eventos
+        function guardarEventos() { localStorage.setItem('eventos', JSON.stringify(eventos)); }
+        function añadirEvento(tipo) {
+            const fecha = document.getElementById('fecha-evento').value;
+            if(!fecha) { alert("Por favor selecciona una fecha primero."); return; }
+            eventos.push({ id: Date.now(), fecha: fecha, tipo: tipo });
+            guardarEventos(); renderizarEventos();
+        }
+        function borrarEvento(id) { eventos = eventos.filter(e => e.id !== id); guardarEventos(); renderizarEventos(); }
+        
+        function renderizarEventos() {
+            const lista = document.getElementById('lista-eventos');
+            lista.innerHTML = '';
+            eventos.forEach(ev => {
+                const tipoTexto = ev.tipo === 'visita' ? '👔 Visita Superintendente' : '🏕️ Semana de Asamblea';
+                lista.innerHTML += `<div class="item-lista" style="flex-direction:row; align-items:center;"><span><strong>${ev.fecha}</strong> - ${tipoTexto}</span><button class="btn-cerrar" onclick="borrarEvento(${ev.id})">❌</button></div>`;
+            });
+        }
+
+        // --- SISTEMA DE RESPALDO Y RESTAURACIÓN ---
+        function exportarRespaldo() {
+            // Empacamos los datos
+            const datosParaRespaldar = { publicadores: publicadores, eventos: eventos };
+            // Los convertimos a formato JSON seguro para web
+            const cadenaDatos = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(datosParaRespaldar));
+            
+            // Creamos un enlace invisible y lo clickeamos automáticamente
+            const enlaceDescarga = document.createElement('a');
+            enlaceDescarga.setAttribute("href", cadenaDatos);
+            enlaceDescarga.setAttribute("download", "respaldo_programa.json");
+            document.body.appendChild(enlaceDescarga);
+            enlaceDescarga.click();
+            enlaceDescarga.remove();
+        }
+
+        function importarRespaldo() {
+            const inputArchivo = document.getElementById('archivo-respaldo');
+            if (inputArchivo.files.length === 0) {
+                alert("Por favor, selecciona un archivo de respaldo (.json) primero.");
+                return;
+            }
+
+            const archivo = inputArchivo.files[0];
+            const lector = new FileReader();
+
+            lector.onload = function(eventoLectura) {
+                try {
+                    // Traducimos el archivo de vuelta a código
+                    const datosRestaurados = JSON.parse(eventoLectura.target.result);
+                    
+                    if (datosRestaurados.publicadores && datosRestaurados.eventos) {
+                        publicadores = datosRestaurados.publicadores;
+                        eventos = datosRestaurados.eventos;
+                        
+                        guardarPublicadores();
+                        guardarEventos();
+                        ordenarPublicadores();
+                        renderizarPublicadores();
+                        renderizarEventos();
+                        iniciarPrograma(); // Refrescar la pantalla
+                        
+                        alert("¡Respaldo cargado con éxito! Tus datos han sido restaurados.");
+                        cerrarModal();
+                    } else {
+                        alert("El archivo cargado no parece ser un respaldo válido de este programa.");
+                    }
+                } catch (error) {
+                    alert("Ocurrió un error al leer el archivo. Asegúrate de que sea el correcto.");
+                }
+            };
+            // Iniciar la lectura del archivo
+            lector.readAsText(archivo);
+        }
+
+        // --- 3. REGLAS Y CONTADOR ---
+        function validarReglas(selectModificado) {
+            const nombreSeleccionado = selectModificado.value;
+            if (!nombreSeleccionado || nombreSeleccionado.includes("---")) {
+                actualizarContador();
+                return;
+            }
+
+            const filaActual = selectModificado.closest('tr');
+            const todosLosSelectsDeLaFila = Array.from(filaActual.querySelectorAll('select'));
+            
+            const selectMicrofono = filaActual.querySelector('.sel-microfono');
+            const selectLector = filaActual.querySelector('.sel-lector');
+            
+            if (selectMicrofono && selectLector && selectMicrofono.value !== "" && selectMicrofono.value === selectLector.value) {
+                alert(`NORMA: ${nombreSeleccionado} no puede atender el Micrófono y ser Lector a la vez.`);
+                selectModificado.value = ""; 
+                actualizarContador();
+                return;
+            }
+
+            let conteoTareas = 0;
+            todosLosSelectsDeLaFila.forEach(select => { if (select.value === nombreSeleccionado) conteoTareas++; });
+            if (conteoTareas >= 3) {
+                alert(`NORMA: ${nombreSeleccionado} ya alcanzó el límite de 2 tareas por reunión.`);
+                selectModificado.value = ""; 
+            }
+            actualizarContador();
+        }
+
+        function actualizarContador() {
+            const selects = document.querySelectorAll('#area-impresion select');
+            let conteoPorPersona = {};
+            
+            publicadores.forEach(p => { if(!p.nombre.includes("---")) conteoPorPersona[p.nombre] = 0; });
+
+            selects.forEach(select => {
+                const nombre = select.value;
+                if (nombre && !nombre.includes("---") && conteoPorPersona[nombre] !== undefined) {
+                    conteoPorPersona[nombre]++;
+                }
+            });
+
+            const grid = document.getElementById('grid-estadisticas');
+            grid.innerHTML = '';
+            
+            const personasOrdenadas = Object.keys(conteoPorPersona).sort((a, b) => conteoPorPersona[b] - conteoPorPersona[a]);
+
+            personasOrdenadas.forEach(nombre => {
+                const numero = conteoPorPersona[nombre];
+                const colorFondo = numero === 0 ? '#6c757d' : '#28a745';
+                
+                let pub = publicadores.find(p => p.nombre === nombre);
+                let etiqueta = (pub && pub.anciano) ? " (A)" : "";
+
+                grid.innerHTML += `
+                    <div class="badge-estadistica">
+                        <span>${nombre}${etiqueta}</span>
+                        <span class="badge-numero" style="background-color: ${colorFondo};">${numero}</span>
+                    </div>
+                `;
+            });
+
+            document.getElementById('panel-estadisticas').style.display = selects.length > 0 ? 'block' : 'none';
+        }
+
+        // --- 4. AUTOCOMPLETAR INTELIGENTE ---
+        function autocompletarMes() {
+            const filas = document.querySelectorAll('#area-impresion tbody tr:not(.asamblea-row)');
+            
+            filas.forEach(fila => {
+                const selectsDeLaFila = Array.from(fila.querySelectorAll('select'));
+                const ordenLlenado = ['presidente', 'plataforma', 'lector', 'microfono', 'acomodador'];
+
+                ordenLlenado.forEach(tipoTarea => {
+                    const selectsDeEstaTarea = selectsDeLaFila.filter(s => s.classList.contains(`sel-${tipoTarea}`) && s.value === "");
+
+                    selectsDeEstaTarea.forEach(selectParaLlenar => {
+                        let candidatos = obtenerNombresPorTarea(tipoTarea);
+
+                        let conteoGlobal = {};
+                        publicadores.forEach(p => conteoGlobal[p.nombre] = 0);
+                        document.querySelectorAll('#area-impresion select').forEach(s => {
+                            if(s.value && !s.value.includes("---")) conteoGlobal[s.value] = (conteoGlobal[s.value] || 0) + 1;
+                        });
+
+                        let tareasAsignadasEnFila = {};
+                        selectsDeLaFila.forEach(s => { if(s.value) tareasAsignadasEnFila[s.value] = (tareasAsignadasEnFila[s.value] || 0) + 1; });
+
+                        const selLectorValor = fila.querySelector('.sel-lector') ? fila.querySelector('.sel-lector').value : null;
+                        const selMicrofonoValor = fila.querySelector('.sel-microfono') ? fila.querySelector('.sel-microfono').value : null;
+
+                        candidatos = candidatos.filter(nombre => {
+                            if (nombre.includes("---")) return true;
+                            if ((tareasAsignadasEnFila[nombre] || 0) >= 2) return false;
+                            if (tipoTarea === 'microfono' && selLectorValor === nombre) return false;
+                            if (tipoTarea === 'lector' && selMicrofonoValor === nombre) return false;
+                            return true;
+                        });
+
+                        candidatos.sort((a, b) => {
+                            if(a.includes("---")) return 1; 
+                            if(b.includes("---")) return -1;
+                            
+                            let conteoA = conteoGlobal[a] || 0;
+                            let conteoB = conteoGlobal[b] || 0;
+                            
+                            let pubA = publicadores.find(p => p.nombre === a);
+                            let pubB = publicadores.find(p => p.nombre === b);
+                            
+                            if (pubA && pubA.anciano) conteoA += 3;
+                            if (pubB && pubB.anciano) conteoB += 3;
+
+                            return conteoA - conteoB;
+                        });
+
+                        if (candidatos.length > 0) {
+                            selectParaLlenar.value = candidatos[0];
+                        }
+                    });
+                });
+            });
+
+            actualizarContador();
+            alert("¡Autocompletado inteligente finalizado!");
+        }
+
+        // --- 5. LÓGICA DE GENERACIÓN ---
+        window.onload = function() {
+            // Ejecutamos el mantenimiento apenas carga la página
+            limpiarEventosVencidos();
+
+            const hoy = new Date();
+            const mesFormat = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+            document.getElementById('selector-mes').value = mesFormat;
+            
+            const area = document.getElementById('area-impresion');
+            while (area.children.length > 1) { area.removeChild(area.lastChild); }
+            
+            iniciarPrograma();
+        }
+
+        function actualizarBotonEliminar() {
+            const mesesGenerados = document.querySelectorAll('.mes-container').length;
+            const btnEliminar = document.getElementById('btn-eliminar-mes');
+            btnEliminar.style.display = mesesGenerados > 1 ? 'inline-block' : 'none';
+        }
+
+        function iniciarPrograma() {
+            const area = document.getElementById('area-impresion');
+            while (area.children.length > 1) {
+                area.removeChild(area.lastChild);
+            }
+
+            const valor = document.getElementById('selector-mes').value;
+            if(!valor) return;
+            const [anio, mes] = valor.split('-').map(Number);
+            mesActualGenerado = new Date(anio, mes - 1, 1);
+            
+            generarTablaMes(mesActualGenerado.getFullYear(), mesActualGenerado.getMonth());
+        }
+
+        function añadirSiguienteMes() {
+            if(!mesActualGenerado) return;
+            mesActualGenerado.setMonth(mesActualGenerado.getMonth() + 1);
+            generarTablaMes(mesActualGenerado.getFullYear(), mesActualGenerado.getMonth());
+        }
+
+        function eliminarUltimoMes() {
+            const area = document.getElementById('area-impresion');
+            const meses = area.getElementsByClassName('mes-container');
+            if (meses.length > 1) {
+                area.removeChild(meses[meses.length - 1]);
+                mesActualGenerado.setMonth(mesActualGenerado.getMonth() - 1);
+            }
+            actualizarBotonEliminar();
+            actualizarContador();
+        }
+
+        function obtenerNombresPorTarea(tarea) { return publicadores.filter(p => p[tarea]).map(p => p.nombre); }
+
+        function crearDesplegable(tarea, desactivado = false) {
+            let opciones = `<option value="">-- Elegir --</option>`;
+            obtenerNombresPorTarea(tarea).forEach(nombre => {
+                opciones += `<option value="${nombre}">${nombre}</option>`;
+            });
+            return `<select class="sel-${tarea}" onchange="validarReglas(this)" ${desactivado ? "disabled" : ""}>${opciones}</select>`;
+        }
+
+        function recargarDesplegablesExistentes() {
+            iniciarPrograma(); 
+        }
+
+        function evaluarEventoSema(lunesSemana, domingoSemana) {
+            for (let ev of eventos) {
+                let fechaEv = new Date(ev.fecha + "T00:00:00");
+                if (fechaEv >= lunesSemana && fechaEv <= domingoSemana) return ev.tipo;
+            }
+            return 'normal';
+        }
+
+        function generarTablaMes(anio, mes) {
+            const mesesNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            
+            let html = `
+                <div class="mes-container">
+                    <h2 style="margin-top:0; color: #333;">${mesesNombres[mes]} ${anio}</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>FECHA</th><th>ACOMODADORES</th><th>MICRÓFONO</th><th>PLATAFORMA</th><th>LECTOR</th><th>PRESIDENTE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            let fecha = new Date(anio, mes, 1);
+            let lunesSemana = new Date(fecha);
+            let diaDeLaSemana = lunesSemana.getDay() === 0 ? 7 : lunesSemana.getDay(); 
+            lunesSemana.setDate(lunesSemana.getDate() - diaDeLaSemana + 1);
+
+            while (lunesSemana.getMonth() === mes || (lunesSemana.getMonth() < mes && lunesSemana.getFullYear() === anio) || (lunesSemana.getMonth() === 11 && mes === 0)) {
+                
+                let domingoSemana = new Date(lunesSemana);
+                domingoSemana.setDate(domingoSemana.getDate() + 6);
+                
+                if (lunesSemana.getMonth() === mes || domingoSemana.getMonth() === mes) {
+                    
+                    const tipoEvento = evaluarEventoSema(lunesSemana, domingoSemana);
+                    let miercoles = new Date(lunesSemana); miercoles.setDate(miercoles.getDate() + 2); 
+                    let sabado = new Date(lunesSemana); sabado.setDate(sabado.getDate() + 5); 
+
+                    if (tipoEvento === 'asamblea') {
+                        html += `<tr class="asamblea-row"><td colspan="6">ASAMBLEA</td></tr>`;
+                    } else {
+                        let sinLector = false;
+                        let dia1 = miercoles;
+                        let nombreDia1 = "Miércoles";
+
+                        if (tipoEvento === 'visita') {
+                            dia1 = new Date(lunesSemana); dia1.setDate(dia1.getDate() + 1);
+                            nombreDia1 = "Martes";
+                            sinLector = true;
+                        }
+
+                        if (dia1.getMonth() === mes) {
+                            let sinPresidente = (nombreDia1 === "Miércoles" || nombreDia1 === "Martes");
+                            html += crearFilaReunion(nombreDia1, dia1.getDate(), sinLector, sinPresidente);
+                        }
+                        if (sabado.getMonth() === mes) {
+                            html += crearFilaReunion("Sábado", sabado.getDate(), sinLector, false);
+                        }
+                    }
+                }
+                
+                lunesSemana.setDate(lunesSemana.getDate() + 7);
+                if(lunesSemana.getFullYear() > anio || (lunesSemana.getFullYear() === anio && lunesSemana.getMonth() > mes)) break;
+            }
+
+            html += `</tbody></table></div>`;
+            
+            const divTemporal = document.createElement('div');
+            divTemporal.innerHTML = html;
+            document.getElementById('area-impresion').appendChild(divTemporal.firstElementChild);
+            
+            actualizarBotonEliminar();
+            actualizarContador();
+        }
+
+        function crearFilaReunion(nombreDia, numeroDia, sinLector, sinPresidente) {
+            let lectorHtml = sinLector ? "---" : crearDesplegable("lector");
+            let presidenteHtml = sinPresidente ? "---" : crearDesplegable("presidente");
+            return `
+                <tr>
+                    <td class="celda-fecha"><strong>${nombreDia} ${numeroDia}</strong></td>
+                    <td class="celda-selectores">
+                        ${crearDesplegable("acomodador")}
+                        ${crearDesplegable("acomodador")}
+                    </td>
+                    <td class="celda-selectores">${crearDesplegable("microfono")}</td>
+                    <td class="celda-selectores">${crearDesplegable("plataforma")}</td>
+                    <td class="celda-selectores">${lectorHtml}</td>
+                    <td class="celda-selectores">${presidenteHtml}</td>
+                </tr>
+            `;
+        }
+
+        // --- 6. EXPORTACIÓN ---
+        function exportarJPG() {
+            const selects = document.querySelectorAll('#area-impresion select');
+            const backups = [];
+            
+            selects.forEach(select => {
+                const span = document.createElement('span');
+                span.innerText = select.options[select.selectedIndex] ? select.options[select.selectedIndex].text : "";
+                if(span.innerText.includes("-- Elegir --")) span.innerText = "";
+                
+                span.style.display = 'block';
+                span.style.margin = '4px 0'; 
+                span.style.minHeight = '15px';
+                span.style.fontSize = '16px'; 
+                
+                backups.push({ select: select, parent: select.parentNode, span: span });
+                select.parentNode.insertBefore(span, select);
+                select.style.display = 'none';
+            });
+
+            const elemento = document.getElementById("area-impresion");
+            
+            html2canvas(elemento, { scale: 2, backgroundColor: "#fff" }).then(canvas => {
+                backups.forEach(backup => {
+                    backup.parent.removeChild(backup.span);
+                    backup.select.style.display = '';
+                });
+
+                let enlace = document.createElement("a");
+                enlace.download = "Programa_Mecanico.jpg";
+                enlace.href = canvas.toDataURL("image/jpeg");
+                enlace.click();
+            });
+        }
+    </script>
+</body>
+</html>
